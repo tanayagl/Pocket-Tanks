@@ -1,0 +1,13 @@
+{
+  "name": "ts-template",
+  "version": false,
+  "dependencies": {
+    "backbone": "registry:dt/backbone#1.0.0+20160316155526",
+    "bluebird": "registry:npm/bluebird#3.3.4+20160427051630",
+    "lodash": "registry:npm/lodash#4.0.0+20160416211519"
+  },
+  "ambientDependencies": {
+    "cocos2d": "file:./cocos2d/typings.json",
+    "node": "registry:dt/node#4.0.0+20160509154515"
+  }
+}
