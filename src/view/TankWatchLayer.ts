@@ -6,6 +6,7 @@ import AppConstants, {clearAppConstants} from '../AppConstants';
 
 let terrainPoints = [];
 let segmentWidth = 5;
+let bricks = [];
 export default class TankWatchLayer extends cc.Layer {
     sprite: any;
     constructor() {
@@ -13,7 +14,11 @@ export default class TankWatchLayer extends cc.Layer {
         this.showGame(this);
         this.addInfoBar(this, '');
         this.drawTerrain();
+        console.log(terrainPoints.length)
+        this.removeCircle(terrainPoints[200].x,terrainPoints[200].y);
+        //this.removeBrick(AppConstants.DEVICE_WIDTH/2,AppConstants.DEVICE_HEIGHT*0.3);
         // this.gaussian();
+        //this.test();
     }
     
     showGame(parent: cc.Node) {
@@ -142,15 +147,20 @@ export default class TankWatchLayer extends cc.Layer {
         var gap_between_hills = AppConstants.DEVICE_WIDTH/total_hills;
         // hill_points[1] = cc.p(AppConstants.DEVICE_HEIGHT/2,AppConstants.DEVICE_HEIGHT/2);
         // hill_points[2] = cc.p(AppConstants.DEVICE_WIDTH,AppConstants.DEVICE_HEIGHT/5);
-        
+        terrainPoints.push(cc.p(0,0));
+        var line = new cc.DrawNode();
         for(var index=1;index<=total_hills;index++) {
-            var line = new cc.DrawNode();
+            
             // Generate Hills
             let height = cc.random0To1()*AppConstants.DEVICE_HEIGHT*0.3+AppConstants.DEVICE_HEIGHT*0.4;
             hill_points[index] = cc.p(index*gap_between_hills,height);
             console.log(hill_points[index]+"-------------");
             this.drawCurves(hill_points[index-1],hill_points[index]);
-        }  
+            
+        }
+        terrainPoints.push(cc.p(AppConstants.DEVICE_WIDTH,0));  
+        // line.drawPoly(terrainPoints,cc.color(0,128,0),0,cc.color(255,255,255));
+        // this.addChild(line);
     }               
     
     drawCurves(p0 :cc.Point, p1: cc.Point) {
@@ -159,48 +169,96 @@ export default class TankWatchLayer extends cc.Layer {
         var amplitude = (p0.y - p1.y)/2;
         var dx = (p1.x - p0.x)/hillSegments;
         var delta = Math.PI/hillSegments;
-        let line = new cc.DrawNode(); 
+        //let line = new cc.DrawNode(); 
         var point0 =  cc.p(0,0);
         var point1 = cc.p(0,0); 
         point0 = cc.p(p0.x,p0.y);
-        console.log(dx);
+        // line.drawSegment(point0,cc.p(0.0),2,cc)
         var count=0;
         for(var i=1;i<=hillSegments;i++) {
-             point1.x = p0.x+i*dx;    
-             point1.y = ymid+amplitude*Math.cos(i*delta);
-             terrainPoints.push({x:point0.x,y:point0.y});
-            //  line.drawSegment(point0,point1,2,cc.color(255,255,255));
-             this.fillBrick(point0.x,point0.y);
-             point0 = cc.p(point1.x,point1.y);   
-        }   
-        this.addChild(line); 
+            point1.x = p0.x+i*dx;    
+            point1.y = ymid+amplitude*Math.cos(i*delta);
+            terrainPoints.push(point0);
+            // line.drawSegment(point0,point1,2,cc.color(255,255,255));
+            //this.fillBrick(point0.x,point0.y);
+            point0 = cc.p(point1.x,point1.y);   
+       }
+       
+        // line.drawPoly(terrainPoints,cc.color(0,128,0),1,cc.color(255,255,255));
+        // this.addChild(line);
     }
- 
-    
-    // createRectangle(x,y): cc.Node {
-    //     let rectangle = new cc.DrawNode();
-    //     rectangle.drawRect(cc.p(0,0), cc.p(10, 1), cc.color(255, 255, 255), 1, cc.color(255, 255, 255));
-    //     rectangle.x = x;
-    //     rectangle.y = y;
-    //     this.addChild(rectangle)
-    //     return rectangle;
-    // }
     
     fillBrick(x,y) {
-        let brick = flax.assetsManager.createDisplay(res.terrain_brick,"greenbox");
-        // let scale_size = segmentWidth/brick.width;
-        // brick.setScale(scale_size);
-        // brick.setAnchorPoint(0.5,0); 
-        // var total_bricks = y/brick.height*scale_size;
-        // for(var i=0;i<total_bricks;i++) {
-        //     let brick = flax.assetsManager.createDisplay(res.terrain_brick);
-        //     brick.x = x;
-        //     brick.y = i*brick.height;
-        //     this.addChild(brick);
-        //     // bricks.push(brick); 
-        // }
+        // let brick = flax.assetsManager.createDisplay(res.terrain_plist,"greenbox.jpg");
+        console.log("---------"+y+"---------------");
+        let brick_sprite = new cc.Sprite(res.terrain_brick);
+        let scale_size_x = segmentWidth/brick_sprite.width;
+        let scale_size_y = 0.1;
+        var total_bricks = Math.floor(y/(brick_sprite.height*scale_size_y));
+        for(var i=0;i<total_bricks;i++) {
+            let brick = new cc.Sprite(res.terrain_brick);
+            brick.setScaleX(scale_size_x);
+            brick.setScaleY(scale_size_y);
+            brick.setAnchorPoint(0.5,0);
+            brick.x = x;
+            brick.y = i*(brick.height*scale_size_y);
+            bricks.push(brick);
+            this.addChild(brick);
+        }
         
     }
+    
+    removeCircle(x0,y0) {
+        let radius = 100;
+        let collision_point =0;
+        var change_index = [];
+        var line = new cc.DrawNode();
+        for(var j=0;j<bricks.length;j++) {
+            let x1 = terrainPoints[j].x; 
+            if((x1-x0)<=segmentWidth) {   
+                collision_point = j;
+                break;
+            }
+        }
+        collision_point = 400;
+        var index = collision_point;
+        var key = terrainPoints[collision_point];
+        while (key.x-terrainPoints[index].x<=radius) {
+            change_index.push(index);
+            index--;
+            if(index<0||index>terrainPoints.length)
+                break;
+        }
+        index = collision_point+1;
+        while (terrainPoints[index].x-key.x<=radius) {
+            change_index.push(index);
+            index++;
+            if(index<0||index>terrainPoints.length)
+                break;
+        }
+        for(let i=0;i<change_index.length;i++) {
+            var point = terrainPoints[change_index[i]];
+            point.y = point.y-(Math.sqrt((radius*radius)-(key.x-point.x)*(key.x-point.x)))
+            console.log(point);  
+        }
+        line.drawPoly(terrainPoints,cc.color(0,128,0),1,cc.color(255,255,255));
+        this.addChild(line);
+       
+        
+        
+            
+    }
+    
+    test(){
+        var line = new cc.DrawNode();
+        var source = cc.p(AppConstants.DEVICE_WIDTH*0.1,AppConstants.DEVICE_HEIGHT/2);
+        var dest = cc.p(AppConstants.DEVICE_WIDTH*0.5,AppConstants.DEVICE_HEIGHT/2);
+        var control = cc.p(AppConstants.DEVICE_WIDTH*0.3,0);
+        line.drawQuadBezier(source,control,dest,10,1,cc.color(255,255,255));
+        this.addChild(line);
+    }
+    
+    
     slope(p1: cc.Point, p2: cc.Point): number {
         return (p2.y - p1.y) / (p2.x - p1.x);
     }

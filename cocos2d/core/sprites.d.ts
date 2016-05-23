@@ -464,7 +464,7 @@ declare namespace cc {
          */
         public static INDEX_NOT_INITIALIZED:number;
 
-        public constructor(fileName:string, rect?:Rect, rotated?:boolean);
+        public constructor(fileName?:string|Texture2D, rect?:Rect, rotated?:boolean);
 
         /**
          * Returns whether the texture have been loaded
